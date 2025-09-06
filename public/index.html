@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistema de Livros</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    form, .livros { margin-top: 20px; }
+    input, button { margin: 5px; padding: 8px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 10px; text-align: left; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>📚 Sistema de Livros</h1>
+
+  <!-- Criar livro -->
+  <form id="formLivro">
+    <input type="text" id="titulo" placeholder="Título" required>
+    <input type="text" id="autor" placeholder="Autor" required>
+    <input type="number" id="preco" placeholder="Preço" step="0.01" required>
+    <button type="submit">Adicionar Livro</button>
+  </form>
+
+  <!-- Buscar livro por ID -->
+  <div>
+    <h3>🔍 Buscar Livro por ID</h3>
+    <input type="number" id="livroId" placeholder="ID do livro">
+    <button onclick="buscarLivroPorId()">Buscar</button>
+    <div id="resultadoBusca"></div>
+  </div>
+
+  <!-- Listagem -->
+  <div class="livros">
+    <h2>📖 Lista de Livros</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Autor</th>
+          <th>Preço</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaLivros"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = "/livros";
+
+    // GET all livros
+    async function carregarLivros() {
+      const res = await fetch(API_URL);
+      const livros = await res.json();
+      const tabela = document.getElementById("tabelaLivros");
+      tabela.innerHTML = "";
+
+      livros.forEach(livro => {
+        const row = `
+          <tr>
+            <td>${livro.id}</td>
+            <td>${livro.titulo}</td>
+            <td>${livro.autor}</td>
+            <td>R$ ${livro.preco}</td>
+            <td>
+              <button onclick="editarLivro(${livro.id}, '${livro.titulo}', '${livro.autor}', ${livro.preco})">✏️ Editar</button>
+              <button onclick="deletarLivro(${livro.id})">🗑️ Excluir</button>
+            </td>
+          </tr>
+        `;
+        tabela.innerHTML += row;
+      });
+    }
+
+    // POST - adicionar livro
+    document.getElementById("formLivro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const titulo = document.getElementById("titulo").value;
+      const autor = document.getElementById("autor").value;
+      const preco = document.getElementById("preco").value;
+
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo, autor, preco })
+      });
+
+      e.target.reset();
+      carregarLivros();
+    });
+
+    // GET por ID
+    async function buscarLivroPorId() {
+      const id = document.getElementById("livroId").value;
+      if (!id) return alert("Informe um ID!");
+
+      const res = await fetch(`${API_URL}/${id}`);
+      if (res.ok) {
+        const livro = await res.json();
+        document.getElementById("resultadoBusca").innerHTML =
+          `<p><strong>${livro.titulo}</strong> - ${livro.autor} (R$ ${livro.preco})</p>`;
+      } else {
+        document.getElementById("resultadoBusca").innerHTML = "<p style='color:red'>Livro não encontrado</p>";
+      }
+    }
+
+    // PUT - editar livro
+    async function editarLivro(id, titulo, autor, preco) {
+      const novoTitulo = prompt("Novo título:", titulo);
+      const novoAutor = prompt("Novo autor:", autor);
+      const novoPreco = prompt("Novo preço:", preco);
+
+      if (novoTitulo && novoAutor && novoPreco) {
+        await fetch(`${API_URL}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ titulo: novoTitulo, autor: novoAutor, preco: novoPreco })
+        });
+        carregarLivros();
+      }
+    }
+
+    // DELETE - deletar livro
+    async function deletarLivro(id) {
+      if (confirm("Tem certeza que deseja excluir este livro?")) {
+        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        carregarLivros();
+      }
+    }
+
+    // Inicializar
+    carregarLivros();
+  </script>
+</body>
+</html>
