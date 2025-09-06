@@ -81,6 +81,36 @@ app.get('/livros', async (req, res) => {
     }
 });
 
+// Atualizar livro por ID
+app.put('/livros/:id', async (req, res) => {
+    try {
+        const livro = await Livro.findByPk(req.params.id);
+        if (livro) {
+            await livro.update(req.body);
+            res.json(livro);
+        } else {
+            res.status(404).json({ error: 'Livro não encontrado' });
+        }
+    } catch (error) {
+        res.status(400).json({ error: 'Erro ao atualizar livro' });
+    }
+});
+
+// Deletar livro por ID
+app.delete('/livros/:id', async (req, res) => {
+    try {
+        const livro = await Livro.findByPk(req.params.id);
+        if (livro) {
+            await livro.destroy();
+            res.json({ message: 'Livro deletado com sucesso' });
+        } else {
+            res.status(404).json({ error: 'Livro não encontrado' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao deletar livro' });
+    }
+});
+
 // Inicia o servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
